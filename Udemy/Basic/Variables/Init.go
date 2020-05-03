@@ -59,6 +59,7 @@ func declareShort() {
 	// X = 5
 }
 
+// zeroValues ... is the Default Values of an Variable when Its Not Initialized
 func zeroValues() {
 	var X int
 	var Y bool
