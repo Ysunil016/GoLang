@@ -3,7 +3,7 @@ package main
 import "fmt"
 
 func main() {
-	fmt.Println(isPerfectSquare2(64))
+	fmt.Println(isPerfectSquare2(808201))
 }
 
 func isPerfectSquare2(num int) bool {
@@ -15,13 +15,11 @@ func isPerfectSquare2(num int) bool {
 
 	for mProd != num && low != high {
 		if mProd > num {
-			low = 1
 			high = mid
 			mid = low + (high-low)/2
 			mProd = mid * mid
 		} else {
 			low = mid + 1
-			high = high
 			mid = low + (high-low)/2
 			mProd = mid * mid
 		}
