@@ -4,7 +4,10 @@ import (
 	"fmt"
 )
 
+// Count ..
 var Count int = 0
+
+// KthSmallest ..
 var KthSmallest int = -1
 
 func main() {
