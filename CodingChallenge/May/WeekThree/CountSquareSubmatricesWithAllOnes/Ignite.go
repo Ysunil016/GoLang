@@ -27,12 +27,5 @@ func countSquares(matrix [][]int) int {
 			}
 		}
 	}
-
-	for i := 0; i < len(matrix); i++ {
-		for j := 0; j < len(matrix[0]); j++ {
-			fmt.Print(matrix[i][j])
-		}
-		fmt.Println()
-	}
 	return Count
 }
