@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -20,6 +21,7 @@ var wg sync.WaitGroup
 type RedisParams struct {
 	SourceHost    string
 	SourcePort    string
+	LocalPort     string
 	GeoChannel    string
 	StaticChannel string
 }
@@ -32,9 +34,15 @@ func main() {
 	var SourceHost string = "127.0.0.1"
 	// SubPort ... PORT for Subscription.
 	var SourcePort string = "6379"
+	var LocalPort string = "6379"
+
 	// SourceChannel ... Channel for GEO.
 	var GeoChannel string = "GO_GEO_SOURCE"
+	// SourceChannel ... Channel for Static Data.
 	var StaticChannel string = "GO_STATIC_SOURCE"
+
+	// ListeningPort ... PORT that is Listening for Accepting HTTP Request.
+	var ListeningPort string = ":8080"
 
 	for index, V := range pArgs {
 		var StringVal string = strings.ToLower(V)
@@ -63,6 +71,18 @@ func main() {
 			} else {
 				log.Fatal("Please Provide, Static-CHANNEL after the TAG ", pArgs[index])
 			}
+		case "-lp", "local-port":
+			if index+1 <= len(pArgs) {
+				LocalPort = pArgs[index+1]
+			} else {
+				log.Fatal("Please Provide, Local-Port after the TAG ", pArgs[index])
+			}
+		case "-port", "port":
+			if index+1 <= len(pArgs) {
+				ListeningPort = ":" + pArgs[index+1]
+			} else {
+				log.Fatal("Please Provide, Listening at Port ", pArgs[index])
+			}
 		}
 
 	}
@@ -72,12 +92,57 @@ func main() {
 	redisParam := RedisParams{
 		SourceHost:    SourceHost,
 		SourcePort:    SourcePort,
+		LocalPort:     LocalPort,
 		GeoChannel:    GeoChannel,
 		StaticChannel: StaticChannel,
 	}
 
 	// Now All Parameters are Set ... Handling Sub and Pub
-	RedisHandler(redisParam)
+	go RedisHandler(redisParam) // On Seperate Core
+
+	// Listening to Expose API
+	fmt.Println("Server Listening at Port", ListeningPort)
+	http.HandleFunc("/geoRadius", getGeoRadius)
+	log.Fatal(http.ListenAndServe(ListeningPort, nil))
+}
+
+// GeoRadiusRequest ...
+type GeoRadiusRequest struct {
+	KEY string
+	LAT float64
+	LNG float64
+	RAD float64
+}
+
+func getGeoRadius(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		fmt.Fprint(w, "Please Use POST METHOD, with Required Parameters")
+		return
+	}
+	P := GeoRadiusRequest{}
+	err := json.NewDecoder(r.Body).Decode(&P)
+	if err != nil {
+		fmt.Fprint(w, "Could Not Parse Your Received Parameter")
+	}
+	findIDsInRad(w, P)
+}
+
+func findIDsInRad(w http.ResponseWriter, params GeoRadiusRequest) {
+	client := (RedInstance{"127.0.0.1", "6379"}).getRedisConnection()
+	defer client.Close()
+	geoPos, _ := client.GeoRadius(context.Background(), params.KEY, params.LNG, params.LAT, &redis.GeoRadiusQuery{
+		Radius:      params.RAD,
+		WithCoord:   true,
+		WithDist:    true,
+		WithGeoHash: true,
+		Unit:        "km",
+	}).Result()
+
+	// if err.Error() != "nil" {
+	// 	fmt.Fprint(w, "Could Not Fetch GeoPos")
+	// 	return
+	// }
+	json.NewEncoder(w).Encode(geoPos)
 }
 
 const (
@@ -89,12 +154,13 @@ const (
 func RedisHandler(args RedisParams) {
 	// Get Instance for 2 Clients - PUB and SUB
 	client := (RedInstance{args.SourceHost, args.SourcePort}).getRedisConnection()
-
+	defer client.Close()
 	wg.Add(2)
 	// Get LAT-LNG and ID from Source to RedisGeo
-	go handleGeoData(client, args.GeoChannel)       // Receives Geo Data and Saves Data to Redis in Geo
+	go handleGeoData(client, args.GeoChannel, args) // Receives Geo Data and Saves Data to Redis in Geo
 	go handleStaticData(client, args.StaticChannel) // Receives the Data and Save in Redis Store.
 	wg.Wait()
+
 }
 
 // StaticData ....
@@ -127,8 +193,11 @@ func handleStaticData(client *redis.Client, channel string) {
 	}
 }
 
-func handleGeoData(client *redis.Client, channel string) {
+func handleGeoData(client *redis.Client, channel string, args RedisParams) {
 	defer wg.Done()
+	localClient := (RedInstance{"127.0.0.1", args.LocalPort}).getRedisConnection()
+	defer client.Close()
+
 	redisMsg := client.Subscribe(context.Background(), channel).Channel()
 	for {
 		msqRec := <-redisMsg
@@ -137,7 +206,8 @@ func handleGeoData(client *redis.Client, channel string) {
 		Lng, _ := strconv.ParseFloat(msgSlice[3], 64)
 		Key := msgSlice[0]
 		ID := msgSlice[1]
-		_, err := client.GeoAdd(context.Background(), Key, &redis.GeoLocation{
+		// Saving Geo Data in Local Redis
+		_, err := localClient.GeoAdd(context.Background(), Key, &redis.GeoLocation{
 			Name:      ID,
 			Latitude:  Lat,
 			Longitude: Lng,
