@@ -14,14 +14,15 @@ var indexCounter = 0
 func allPathsSourceTarget(graph [][]int) [][]int {
 	Result = make([][]int, len(graph))
 	dfsSearch(0, len(graph)-1, 1, make([]int, len(graph)), graph)
-	
+	fmt.Println(Result)
 	return Result
 }
 
 func dfsSearch(currentIndex, finalIndex, inCounter int, currentList []int, graph [][]int) {
 	if currentIndex == finalIndex {
 		fmt.Println(currentList)
-		Result[indexCounter] = currentList
+		Result[indexCounter] = append(Result[indexCounter], currentList...)
+		indexCounter++
 		return
 	}
 
