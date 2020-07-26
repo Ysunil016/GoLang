@@ -6,6 +6,15 @@ func main() {
 	Arr := []int{0, 1, 2}
 	fmt.Println(findMin(Arr))
 }
+func findMin2(nums []int) int {
+	result := nums[0]
+	for _, V := range nums {
+		if result < V {
+			result = V
+		}
+	}
+	return result
+}
 
 func findMin(nums []int) int {
 	low := 0
