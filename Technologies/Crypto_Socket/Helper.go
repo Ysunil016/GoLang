@@ -6,12 +6,9 @@ import (
 	"crypto/md5"
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
 	"io"
+	"log"
 )
-
-// PASSPHRASE is Used as Secrete Key
-var PASSPHRASE string = "thisis32bitlongpassphraseimusing"
 
 // Creating Hash
 func createHash(key string) string {
@@ -25,13 +22,20 @@ func encrypt(data []byte, passphrase string) []byte {
 	block, _ := aes.NewCipher([]byte(createHash(passphrase)))
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		panic(err.Error())
+		log.Println(err.Error())
 	}
 	nonce := make([]byte, gcm.NonceSize())
 	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
 		panic(err.Error())
 	}
 	ciphertext := gcm.Seal(nonce, nonce, data, nil)
+
+	// // Testing Purposes
+	// err = ioutil.WriteFile("app.txt", ciphertext, 0777)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+
 	return ciphertext
 }
 
@@ -44,13 +48,13 @@ func decrypt(data []byte, passphrase string) []byte {
 	}
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		panic(err.Error())
+		log.Println(err.Error())
 	}
 	nonceSize := gcm.NonceSize()
 	nonce, ciphertext := data[:nonceSize], data[nonceSize:]
 	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
-		panic(err.Error())
+		log.Println(err.Error())
 	}
 	return plaintext
 }
@@ -66,13 +70,13 @@ func decrypt(data []byte, passphrase string) []byte {
 // 	return decrypt(data, passphrase)
 // }
 
-// Main Function
-func main() {
-	ciphertext := encrypt([]byte("Sunil Yadav I am Living in Delhi and Ready to Join ThoughtWorks"), PASSPHRASE)
-	fmt.Printf("Encrypted: %x\n", ciphertext)
-	plaintext := decrypt(ciphertext, PASSPHRASE)
-	fmt.Printf("Decrypted: %s\n", plaintext)
+// // Main Function
+// func main() {
+// 	ciphertext := encrypt([]byte("Sunil Yadav I am Living in Delhi and Ready to Join ThoughtWorks"), PASSPHRASE)
+// 	fmt.Printf("Encrypted: %x\n", ciphertext)
+// 	plaintext := decrypt(ciphertext, PASSPHRASE)
+// 	fmt.Printf("Decrypted: %s\n", plaintext)
 
-	// encryptFile("sample.txt", []byte("Hello World"), "password1")
-	// fmt.Println(string(decryptFile("sample.txt", "password1")))
-}
+// 	// encryptFile("sample.txt", []byte("Hello World"), "password1")
+// 	// fmt.Println(string(decryptFile("sample.txt", "password1")))
+// }
