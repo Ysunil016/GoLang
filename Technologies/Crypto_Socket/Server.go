@@ -6,7 +6,7 @@ const (
 	EncPORT    = "9761"
 	DcrPORT    = "9762"
 	ConnTYPE   = "tcp"
-	PASSPHRASE = "_#RootWesee@1234"
+	PASSPHRASE = "SUNIL@#SUNIL$%SUNIL*&SUNIL%SUNIL"
 )
 
 func main() {

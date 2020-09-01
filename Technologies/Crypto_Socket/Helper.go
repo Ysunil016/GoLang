@@ -30,18 +30,15 @@ func encrypt(data []byte, passphrase string) []byte {
 	}
 	ciphertext := gcm.Seal(nonce, nonce, data, nil)
 
-	// // Testing Purposes
-	// err = ioutil.WriteFile("app.txt", ciphertext, 0777)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-
-	return ciphertext
+	return []byte(hex.EncodeToString([]byte(ciphertext)))
 }
 
 // Decrypting Byte String with Password
-func decrypt(data []byte, passphrase string) []byte {
+func decrypt(encMessage []byte, passphrase string) []byte {
 	key := []byte(createHash(passphrase))
+
+	data, _ := hex.DecodeString(string(encMessage))
+
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		panic(err.Error())
@@ -52,11 +49,11 @@ func decrypt(data []byte, passphrase string) []byte {
 	}
 	nonceSize := gcm.NonceSize()
 	nonce, ciphertext := data[:nonceSize], data[nonceSize:]
-	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
+	OpenMessage, err := gcm.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
 		log.Println(err.Error())
 	}
-	return plaintext
+	return OpenMessage
 }
 
 // func encryptFile(filename string, data []byte, passphrase string) {

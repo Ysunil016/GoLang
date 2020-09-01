@@ -23,11 +23,11 @@ func Encryptor() {
 		go func() {
 			for {
 				// get message, output
-				msgReceived, _ := bufio.NewReader(conn).ReadString('\n')
+				msgReceived, _ := bufio.NewReader(conn).ReadBytes('\n')
 				// Received Message for Encryption
 				fmt.Print(msgReceived)
 				// Encrypting Message
-				cipheredText := encrypt([]byte(msgReceived), PASSPHRASE)
+				cipheredText := encrypt(msgReceived, PASSPHRASE)
 
 				ioutil.WriteFile("app.txt", cipheredText, 0777)
 

@@ -21,18 +21,17 @@ func Decryptor() {
 	for {
 		for {
 			// get message, output
-			msgReceived, _ := bufio.NewReader(conn).ReadString('\n')
+			msgReceived, _ := bufio.NewReader(conn).ReadBytes('\n')
 
 			byteReceived, _ := ioutil.ReadFile("app.txt")
-			msgReceived = string(byteReceived)
+			msgReceived = byteReceived
 
-			// Received Message for Decryption
-			fmt.Print(msgReceived)
 			// Dcrypting Message
-			decipheredText := decrypt([]byte(msgReceived), PASSPHRASE)
+			decipheredText := decrypt(msgReceived, PASSPHRASE)
 
+			fmt.Println(decipheredText)
 			// Sending Dcrypted Message
-			conn.Write([]byte(decipheredText))
+			conn.Write(decipheredText)
 		}
 	}
 
