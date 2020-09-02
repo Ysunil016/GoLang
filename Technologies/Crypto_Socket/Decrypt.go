@@ -3,16 +3,15 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"net"
 )
 
 // Decryptor ...
 func Decryptor() {
-	fmt.Println("Starting Decryptor...")
+	fmt.Println("Starting Decryptor...@", DcrPORT)
 
-	// listen on port 8000
-	ln, _ := net.Listen(ConnTYPE, ":9762")
+	// listen on port
+	ln, _ := net.Listen(ConnTYPE, ConnHOST+":"+DcrPORT)
 
 	// accept connection
 	conn, _ := ln.Accept()
@@ -23,8 +22,8 @@ func Decryptor() {
 			// get message, output
 			msgReceived, _ := bufio.NewReader(conn).ReadBytes('\n')
 
-			byteReceived, _ := ioutil.ReadFile("app.txt")
-			msgReceived = byteReceived
+			// byteReceived, _ := ioutil.ReadFile("app.txt")
+			// msgReceived = byteReceived
 
 			// Dcrypting Message
 			decipheredText := decrypt(msgReceived, PASSPHRASE)

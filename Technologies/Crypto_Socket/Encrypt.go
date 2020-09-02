@@ -3,16 +3,15 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"net"
 )
 
 // Encryptor ...
 func Encryptor() {
-	fmt.Println("Starting Encryptor...")
+	fmt.Println("Starting Encryptor...@", EncPORT)
 
-	// listen on port 8000
-	ln, _ := net.Listen(ConnTYPE, ":9761")
+	// listen on port
+	ln, _ := net.Listen(ConnTYPE, ConnHOST+":"+EncPORT)
 
 	// Making Dedicated Task
 	for {
@@ -29,7 +28,7 @@ func Encryptor() {
 				// Encrypting Message
 				cipheredText := encrypt(msgReceived, PASSPHRASE)
 
-				ioutil.WriteFile("app.txt", cipheredText, 0777)
+				// ioutil.WriteFile("app.txt", cipheredText, 0777)
 
 				// Sending the Encrypted Data
 				conn.Write([]byte(cipheredText))
